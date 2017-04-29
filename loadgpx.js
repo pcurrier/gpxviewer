@@ -52,7 +52,8 @@ function GPXParser(xmlDoc, map) {
     this.map = map;
     this.trackcolour = "#ff00ff"; // red
     this.trackwidth = 5;
-    this.mintrackpointdelta = 0.0001
+    this.mintrackpointdelta = 0.0001;
+    this.polylinePoints = d3.quadtree();
 }
 
 // Set the colour of the track line segements.
@@ -157,6 +158,8 @@ GPXParser.prototype.addLineToMap = function(route, colour, width, elemName) {
     for(var i = 1; i < routepoints.length; i++) {
         var lon = parseFloat(routepoints[i].getAttribute("lon"));
         var lat = parseFloat(routepoints[i].getAttribute("lat"));
+        var ele = routepoints[i].getElementsByTagName("ele")[0].innerHTML;
+        var time = routepoints[i].getElementsByTagName("time")[0].innerHTML;
 
         // Verify that this is far enough away from the last point to be used.
         var latdiff = lat - lastlat;
@@ -167,6 +170,7 @@ GPXParser.prototype.addLineToMap = function(route, colour, width, elemName) {
             lastlat = lat;
             latlng = new google.maps.LatLng(lat,lon);
             pointarray.push(latlng);
+            this.polylinePoints.add([lon, lat, ele, time]);
         }
 
     }
@@ -176,6 +180,18 @@ GPXParser.prototype.addLineToMap = function(route, colour, width, elemName) {
         strokeColor: colour,
         strokeWeight: width,
         map: this.map
+    });
+    var infowindow = new google.maps.InfoWindow({});
+    var obj = this;
+    google.maps.event.addListener(polyline, 'click', function(event) {
+        var nearest = obj.polylinePoints.find(event.latLng.lng(), event.latLng.lat());
+        var html =
+            'Coordinates: ' + nearest[1] + ', ' + nearest[0] + '<br\>' +
+            'Elevation: ' + nearest[2] + '<br\>' +
+            'Time: ' + nearest[3] + '<br\>';
+        infowindow.setPosition(new google.maps.LatLng(Number(nearest[1]), Number(nearest[0])));
+        infowindow.setContent(html);
+        infowindow.open(obj.map);
     });
 }
 
