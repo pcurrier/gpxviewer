@@ -53,7 +53,7 @@ function GPXParser(xmlDoc, map) {
     this.trackcolour = "#ff00ff"; // red
     this.trackwidth = 5;
     this.mintrackpointdelta = 0.0001;
-    this.polylinePoints = d3.quadtree();
+    this.polylinePoints = null;
 }
 
 // Set the colour of the track line segements.
@@ -64,6 +64,11 @@ GPXParser.prototype.setTrackColour = function(colour) {
 // Set the width of the track line segements
 GPXParser.prototype.setTrackWidth = function(width) {
     this.trackwidth = width;
+}
+
+// Set the track line segments to be clickable to show elevation/time
+GPXParser.prototype.setTrackClickable = function() {
+    this.polylinePoints = d3.quadtree();
 }
 
 // Set the minimum distance between trackpoints.
@@ -170,7 +175,9 @@ GPXParser.prototype.addLineToMap = function(route, colour, width, elemName) {
             lastlat = lat;
             latlng = new google.maps.LatLng(lat,lon);
             pointarray.push(latlng);
-            this.polylinePoints.add([lon, lat, ele, time]);
+            if (this.polylinePoints) {
+                this.polylinePoints.add([lon, lat, ele, time]);
+            }
         }
 
     }
@@ -181,18 +188,20 @@ GPXParser.prototype.addLineToMap = function(route, colour, width, elemName) {
         strokeWeight: width,
         map: this.map
     });
-    var infowindow = new google.maps.InfoWindow({});
-    var obj = this;
-    google.maps.event.addListener(polyline, 'click', function(event) {
-        var nearest = obj.polylinePoints.find(event.latLng.lng(), event.latLng.lat());
-        var html =
-            'Coordinates: ' + nearest[1] + ', ' + nearest[0] + '<br\>' +
-            'Elevation: ' + nearest[2] + '<br\>' +
-            'Time: ' + nearest[3] + '<br\>';
-        infowindow.setPosition(new google.maps.LatLng(Number(nearest[1]), Number(nearest[0])));
-        infowindow.setContent(html);
-        infowindow.open(obj.map);
-    });
+    if (this.polylinePoints) {
+        var infowindow = new google.maps.InfoWindow({});
+        var obj = this;
+        google.maps.event.addListener(polyline, 'click', function(event) {
+            var nearest = obj.polylinePoints.find(event.latLng.lng(), event.latLng.lat());
+            var html =
+                'Coordinates: ' + nearest[1] + ', ' + nearest[0] + '<br\>' +
+                'Elevation: ' + nearest[2] + '<br\>' +
+                'Time: ' + nearest[3] + '<br\>';
+            infowindow.setPosition(new google.maps.LatLng(Number(nearest[1]), Number(nearest[0])));
+            infowindow.setContent(html);
+            infowindow.open(obj.map);
+        });
+    }
 }
 
 GPXParser.prototype.centerAndZoom = function(trackSegment) {

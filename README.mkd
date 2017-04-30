@@ -62,6 +62,7 @@ should do the trick:
               var parser = new GPXParser(data, map);
               parser.setTrackColour("#ff0000");     // Set the track line colour
               parser.setTrackWidth(5);          // Set the track line width
+              parser.setTrackClickable();       // Optional -- make polylines clickable to show track details
               parser.setMinTrackPointDelta(0.001);      // Set the minimum distance between track points
               parser.centerAndZoom(data);
               parser.addTrackpointsToMap();         // Add the trackpoints
@@ -81,6 +82,9 @@ should do the trick:
         loadGPXFileIntoGoogleMap(map, "pocotrail.xml");
     });
 
+If you include the call to `parser.setTrackClickable()`, then you must include this additional dependency for the d3 quadtree implementation:
+
+    <script src="https://d3js.org/d3-quadtree.v1.min.js"></script>
 
 ## Acknowledgements
 
